@@ -11,14 +11,15 @@ import * as ver from '../ver';
 import * as util from '../util';
 
 var dc: DebugClient;
+var adapter: cp.ChildProcess;
 
 const projectDir = path.join(__dirname, '..', '..');
 
-const debuggee = path.join(projectDir, 'out', 'debuggee', 'debuggee');
+const debuggee = path.join(projectDir, 'debuggee', 'out', 'debuggee');
 const debuggeeSource = path.normalize(path.join(projectDir, 'debuggee', 'cpp', 'debuggee.cpp'));
 const debuggeeHeader = path.normalize(path.join(projectDir, 'debuggee', 'cpp', 'dir1', 'debuggee.h'));
 
-const rusttypes = path.join(projectDir, 'out', 'debuggee', 'rusttypes');
+const rusttypes = path.join(projectDir, 'debuggee', 'out', 'rusttypes');
 const rusttypesSource = path.normalize(path.join(projectDir, 'debuggee', 'rust', 'types.rs'));
 
 var port: number = null;
@@ -27,12 +28,28 @@ if (process.env.DEBUG_SERVER) {
     console.log('Debug server port:', port)
 }
 
-setup(() => {
-    dc = new DebugClient('node', './out/tests/launcher.js', 'lldb');
-    return dc.start(port);
-});
+async function createDebugClient() {
+    // adapter = cp.spawn('./out/adapter2/codelldb', [], {
+    //     env: { RUST_LOG: 'debug' }
+    // });
+    // adapter.stderr.on('data', (data) => {
+    //     console.log(data.toString());
+    // });
 
-teardown(() => dc.stop());
+    // let regex = new RegExp('^Listening on port (\\d+)\\s', 'm');
+    // let match = await util.waitForPattern(adapter, adapter.stdout, regex);
+    // let port = parseInt(match[1]);
+
+    dc = new DebugClient('', '', 'lldb')
+    await dc.start(4711);
+}
+
+async function shutdownDebugClient() {
+    await dc.stop();
+    //adapter.kill();
+    dc = null;
+    //adapter = null;
+}
 
 suite('Versions', () => {
     test('comparisons', async () => {
@@ -74,6 +91,10 @@ suite('Util', () => {
 })
 
 suite('Basic', () => {
+
+    setup(() => createDebugClient());
+
+    teardown(() => shutdownDebugClient());
 
     test('run program to the end', async () => {
         let terminatedAsync = dc.waitForEvent('terminated');
@@ -226,24 +247,24 @@ suite('Basic', () => {
 
     test('conditional breakpoint 1', async () => {
         let bpLine = findMarker(debuggeeSource, '#BP3');
-        let setBreakpointAsync = setBreakpoint(debuggeeSource, bpLine, "i == 5");
+        let setBreakpointAsync = setBreakpoint(debuggeeSource, bpLine, 'i == 5');
 
         let stoppedEvent = await launchAndWaitForStop({ name: 'conditional breakpoint 1', program: debuggee, args: ['vars'] });
         let frameId = await getTopFrameId(stoppedEvent.body.threadId);
         let localsRef = await getFrameLocalsRef(frameId);
         let locals = await readVariables(localsRef);
-        assert.equal(locals['i'], "5");
+        assert.equal(locals['i'], '5');
     });
 
     test('conditional breakpoint 2', async () => {
         let bpLine = findMarker(debuggeeSource, '#BP3');
-        let setBreakpointAsync = setBreakpoint(debuggeeSource, bpLine, "/py $i == 5");
+        let setBreakpointAsync = setBreakpoint(debuggeeSource, bpLine, '/py $i == 5');
 
         let stoppedEvent = await launchAndWaitForStop({ name: 'conditional breakpoint 2', program: debuggee, args: ['vars'] });
         let frameId = await getTopFrameId(stoppedEvent.body.threadId);
         let localsRef = await getFrameLocalsRef(frameId);
         let locals = await readVariables(localsRef);
-        assert.equal(locals['i'], "5");
+        assert.equal(locals['i'], '5');
     });
 
     test('disassembly', async () => {
@@ -271,6 +292,22 @@ suite('Basic', () => {
         });
         assert.equal(stackTrace2.body.stackFrames[0].source.sourceReference, sourceRef);
         assert.equal(stackTrace2.body.stackFrames[0].line, 5);
+    });
+
+    test('custom launch', async () => {
+        let bpLine = findMarker(debuggeeSource, '#BP3');
+        let setBreakpointAsync = setBreakpoint(debuggeeSource, bpLine);
+
+        let stoppedEvent = await launchAndWaitForStop({
+            name: 'custom launch',
+            custom: true,
+            targetCreateCommands: ['target create ' + debuggee],
+            processCreateCommands: ['process launch -- vars'],
+        });
+        let frameId = await getTopFrameId(stoppedEvent.body.threadId);
+        let localsRef = await getFrameLocalsRef(frameId);
+        let locals = await readVariables(localsRef);
+        assert.equal(locals['i'], '0');
     });
 });
 
@@ -318,6 +355,10 @@ suite('Attach tests', () => {
 
     var debuggeeProc: cp.ChildProcess;
 
+    setup(() => createDebugClient());
+
+    teardown(() => shutdownDebugClient());
+
     suiteTeardown(() => {
         if (debuggeeProc)
             debuggeeProc.kill()
@@ -350,6 +391,10 @@ suite('Attach tests', () => {
 })
 
 suite('Rust tests', () => {
+    setup(() => createDebugClient());
+
+    teardown(() => shutdownDebugClient());
+
     test('variables', async () => {
         let bpLine = findMarker(rusttypesSource, '#BP1');
         let setBreakpointAsync = setBreakpoint(rusttypesSource, bpLine);
@@ -378,14 +423,14 @@ suite('Rust tests', () => {
             'cstyle_enum2': 'B',
             'enc_enum1': 'Some("string")',
             'enc_enum2': 'Nothing',
-            'opt_str1': 'Some("string")',
-            'opt_str2': 'None',
+            // 'opt_str1': 'Some("string")',
+            // 'opt_str2': 'None',
             'tuple_struct': '(3, "xxx", -3)',
             'reg_struct': '{a:1, c:12}',
             'reg_struct_ref': '{a:1, c:12}',
             'opt_reg_struct1': 'Some({...})',
             'opt_reg_struct2': 'None',
-            'array': '(5) [1, 2, 3, 4, 5]',
+            'array': '{1, 2, 3, 4, 5}',
             'slice': '(5) &[1, 2, 3, 4, 5]',
             'vec_int': '(10) vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]',
             'vec_str': '(5) vec!["111", "2222", "3333", "4444", "5555", ...]',
@@ -402,7 +447,7 @@ suite('Rust tests', () => {
             'path_buf': foo_bar,
             'path': foo_bar,
             'str_tuple': '("A String", "String slice", "C String", "C String", "OS String", "OS String", ' + foo_bar + ', ' + foo_bar + ')',
-            'class': '{finally:1, import:2, lambda:3, raise:4}'
+            'class': '{finally:1, import:2, lambda:3, raise:4, ...}'
         });
 
         let response1 = await dc.evaluateRequest({

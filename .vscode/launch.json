@@ -24,6 +24,90 @@
 			"program": "${workspaceFolder}"
 		},
 		{
+			"name": "codelldb",
+			"preLaunchTask": "build codelldb",
+			"type": "lldb",
+			"request": "launch",
+			"program": "${workspaceFolder}/out/adapter2/codelldb",
+			"args": [
+				"--multi-session"
+			],
+			"env": {
+				//"PATH": "${env:PATH};C:\\Python37-64",
+				"RUST_LOG": "error,codelldb=debug",
+				"RUST_LOG_STYLE": "always",
+				"RUST_BACKTRACE": "1",
+			},
+			"sourceLanguages": [
+				"cpp", "rust"
+			],
+			"terminal": "integrated"
+		},
+		{
+			"name": "codelldb attach",
+			"type": "lldb",
+			"request": "attach",
+			"program": "${workspaceFolder}/out/adapter2/codelldb",
+			"sourceLanguages": [
+				"cpp", "rust"
+			],
+		},
+		{
+			"name": "codelldb cppvsdbg",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"preLaunchTask": "build codelldb",
+			"program":  "${workspaceFolder}/out/adapter2/codelldb.exe",
+			"args": ["--multi-session"],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [
+				{ "name": "PATH", "value":"${env:PATH};C:\\Python36-64;C:\\mingw-w64\\x86_64-8.1.0-win32-seh-rt_v6-rev0\\mingw64\\bin" },
+				{ "name":"RUST_LOG", "value":"error,codelldb=debug"},
+				{ "name":"RUST_LOG_STYLE", "value":"always"},
+				{ "name":"RUST_BACKTRACE", "value":"full"},
+			],
+			//"externalConsole": true,
+			"sourceFileMap": { "C:\\_work\\4\\s": "c:\\NW\\cpython" }
+		},
+		{
+			"name": "threading cppvsdbg",
+			"type": "cppvsdbg",
+			"request": "launch",
+			"preLaunchTask": "build threading",
+			"program": "${workspaceRoot}/target/debug/threading.exe",
+			"environment": [
+				{ "name": "PATH", "value":"${env:PATH};C:\\Python37-64;C:\\NW\ll\\build\\bin" }
+			],
+			"externalConsole": true,
+			"sourceFileMap": { "C:\\_work\\4\\s": "c:\\NW\\cpython" },
+			"symbolSearchPath": "srv*c:\\symbols*https://msdl.microsoft.com/download/symbols;C:\\NW\\ll\\build\\bin"
+		},
+		{
+			"name": "test codelldb",
+			"preLaunchTask": "cargo build",
+			"type": "lldb",
+			"request": "launch",
+			"cargo":{
+				"args": [
+					"test",
+					"--lib",
+					"--no-run",
+					"-p", "codelldb"
+				]
+			},
+			"args": ["--nocapture", "--test-threads=1"],
+			"env": {
+				"PATH": "${env:PATH}:/usr/lib/llvm-6.0/bin",
+				"RUST_LOG": "debug",
+				"RUST_BACKTRACE": "1",
+			},
+			"sourceLanguages": [
+				"cpp", "rust"
+			],
+			"terminal": "integrated"
+		},
+		{
 			"name": "attach to adapter",
 			"type": "python",
 			"request": "attach",
@@ -33,7 +117,7 @@
 		},
 		{
 			"name": "tests",
-			"preLaunchTask": "build",
+			"preLaunchTask": "npm: build",
 			"type": "node",
 			"request": "launch",
 			"cwd": "${workspaceRoot}",
@@ -46,7 +130,7 @@
 				"-u", "tdd",
 				"--timeout", "999999",
 				"--colors",
-				//"-g", "stack",
+				//"-g", "entry",
 				"./out/tests"
 			],
 			"env": {
@@ -59,139 +143,10 @@
 			]
 		},
 		{
-			"name": "debuggee launch vars",
-			"type": "lldb",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/debuggee/debuggee",
-			"args": ["vars", "Farbfüllung", "äöüßÄÖÜ"]
-		},
-		{
-			"name": "debuggee launch threads",
-			"type": "lldb",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/debuggee/debuggee",
-			"args": ["threads"]
-		},
-		{
-			"name": "debuggee launch crash",
-			"type": "lldb",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/debuggee/debuggee",
-			"args": ["crash"]
-		},
-		{
-			"name": "debuggee launch throw",
-			"type": "lldb",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/debuggee/debuggee",
-			"args": ["throw"]
-		},
-		{
-			"name": "debuggee launch mandelbrot",
-			"type": "lldb",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/debuggee/debuggee",
-			"args": ["mandelbrot"],
-			"initCommands": [
-				"command script import '${workspaceRoot}/debuggee/debugvis.py"
-			]
-		},
-		{
-			"name": "debuggee launch disassembly",
-			"type": "lldb",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/debuggee/debuggee",
-			"stopOnEntry": true,
-			"args": ["dasm"]
-		},
-		{
-			"name": "debuggee launch header",
-			"type": "lldb",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/debuggee/debuggee",
-			"args": ["header"],
-			"cwd": "${workspaceFolder}/out/debuggee"
-		},
-		{
-			"name": "debuggee launch check_env",
-			"type": "lldb",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/debuggee/debuggee",
-			"args": ["check_env", "FOO", "BAR"]
-		},
-		{
-			"name": "debuggee attach by pid",
 			"type": "lldb",
 			"request": "attach",
-			"program": "${workspaceRoot}/out/debuggee/debuggee",
+			"name": "Attach by pid",
 			"pid": "${command:pickMyProcess}"
 		},
-		{
-			"name": "debuggee attach by name",
-			"type": "lldb",
-			"request": "attach",
-			"program": "${workspaceRoot}/out/debuggee/debuggee"
-		},
-		{
-			"name": "debuggee custom vars",
-			"type": "lldb",
-			"request": "custom",
-			"targetCreateCommands": [
-				"target create ${workspaceRoot}/out/debuggee/debuggee"
-			],
-			"processCreateCommands": [
-				"process launch -- vars"
-			]
-		},
-		{
-			"name": "debuggee remote platform launch vars",
-			"type": "lldb",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/debuggee/debuggee",
-			// lldb-server platform --server --listen *:1234
-			"initCommands": [
-				"platform select remote-linux",
-				"platform connect connect://127.0.0.1:1234",
-				"platform settings -w /tmp"
-			],
-			"args": [
-				"vars"
-			]
-		},
-		{
-			"name": "debuggee remote gdb vars",
-			"type": "lldb",
-			"request": "custom",
-			// gdbserver 127.0.0.1:1234 out/debuggee/debuggee vars
-			"targetCreateCommands": [
-				"target create  ${workspaceRoot}/out/debuggee/debuggee",
-			],
-			"processCreateCommands": [
-				"gdb-remote 127.0.0.1:1234",
-				"continue"
-			]
-		},
-		{
-			"name": "rusttypes",
-			"type": "lldb",
-			"request": "launch",
-			"program": "${workspaceRoot}/out/debuggee/rusttypes",
-			"cwd": "${workspaceRoot}",
-			"sourceMap": {
-				"/Users/travis/build/rust-lang/rust/": "${workspaceRoot}/../rust/"
-			},
-			"sourceLanguages": [
-				"rust"
-			]
-		}
-	],
-	"compounds": [
-		{
-			"name": "adapter attach + ...",
-			"configurations": [
-				"rusttypes",
-				"attach to adapter",
-			]
-		}
 	]
 }

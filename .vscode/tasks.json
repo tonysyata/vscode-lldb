@@ -27,6 +27,30 @@
       "args": [
         "build"
       ],
+    },
+    {
+      "type": "shell",
+      "command": "sleep 1",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": false,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "cargo build",
+      "command": "cargo build",
+      "problemMatcher": [
+        "$rustc"
+      ]
+    },
+    {
+      "label": "build codelldb",
+      "type": "shell",
+      "command": "clear; python ${workspaceFolder}/tools/build_codelldb.py ${workspaceFolder}",
       "problemMatcher": [
         "$rustc"
       ],
@@ -35,10 +59,7 @@
     {
       "type": "shell",
       "label": "cargo check",
-      "command": "cargo",
-      "args": [
-        "check"
-      ],
+      "command": "clear; cargo check",
       "problemMatcher": [
         "$rustc"
       ],
@@ -49,12 +70,22 @@
       "label": "cargo test",
       "command": "cargo",
       "args": [
-        "test"
+        "test", "-p", "codelldb"
       ],
       "problemMatcher": [
         "$rustc"
       ],
-      "group": "test"
+      "group": "build"
+    },
+    {
+      "type": "shell",
+      "label": "cargo expand lldb",
+      "command": "cargo expand --manifest-path=adapter2/deps/lldb/Cargo.toml >/tmp/expanded.rs",
+    },
+    {
+      "type": "shell",
+      "label": "Start extension host",
+      "command": "code --extensionDevelopmentPath=${workspaceRoot}"
     }
   ]
 }
